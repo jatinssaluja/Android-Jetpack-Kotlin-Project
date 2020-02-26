@@ -49,6 +49,16 @@ class ListFragment : Fragment() {
 
         }
 
+        refreshLayout.setOnRefreshListener {
+            dogsList.visibility = View.GONE
+            listError.visibility = View.GONE
+            loadingSpinner.visibility = View.VISIBLE
+            viewModel.refresh()
+
+            // will only make little spinner at the top disappear, not the loading spinner
+            refreshLayout.isRefreshing = false
+        }
+
         observeViewModel()
 
     }
