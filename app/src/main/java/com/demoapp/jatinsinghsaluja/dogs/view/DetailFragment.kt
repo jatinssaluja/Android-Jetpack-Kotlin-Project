@@ -6,11 +6,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.Navigation
 
 import com.demoapp.jatinsinghsaluja.dogs.R
+import com.demoapp.jatinsinghsaluja.dogs.databinding.FragmentDetailBinding
 import com.demoapp.jatinsinghsaluja.dogs.model.DogBreed
 import com.demoapp.jatinsinghsaluja.dogs.util.getProgressDrawable
 import com.demoapp.jatinsinghsaluja.dogs.util.loadImage
@@ -27,14 +29,16 @@ import kotlinx.android.synthetic.main.fragment_list.*
 class DetailFragment : Fragment() {
 
     private lateinit var viewModel: DetailViewModel
+    private lateinit var dataBinding: FragmentDetailBinding
     private var dogUuid = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        dataBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_detail, container, false)
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_detail, container, false)
+        return dataBinding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -50,10 +54,6 @@ class DetailFragment : Fragment() {
 
         observeViewModel()
 
-
-
-
-
     }
 
     private fun observeViewModel() {
@@ -62,12 +62,7 @@ class DetailFragment : Fragment() {
 
             dogLiveData?.let {
 
-                dogName.text = dogLiveData.dogBreed
-                dogPurpose.text = dogLiveData.bredFor
-                dogTemperament.text = dogLiveData.temperament
-                dogLifespan.text = dogLiveData.lifeSpan
-                context?.let {dogImage.loadImage(dogLiveData.imageUrl, getProgressDrawable(it))}
-
+                dataBinding.dog = dogLiveData
             }
 
         })

@@ -2,6 +2,7 @@ package com.demoapp.jatinsinghsaluja.dogs.util
 
 import android.content.Context
 import android.widget.ImageView
+import androidx.databinding.BindingAdapter
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -34,3 +35,9 @@ fun getProgressDrawable(context: Context):CircularProgressDrawable {
             .into(this)
 
     }
+
+// BindingAdapter annotation makes function available to a layout
+@BindingAdapter("android:imageUrl")
+fun loadImage(view:ImageView , url:String?){
+    view.loadImage(url, getProgressDrawable(view.context))
+}
