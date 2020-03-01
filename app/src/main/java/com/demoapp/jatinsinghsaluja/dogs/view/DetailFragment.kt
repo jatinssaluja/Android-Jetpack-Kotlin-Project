@@ -1,6 +1,8 @@
 package com.demoapp.jatinsinghsaluja.dogs.view
 
 
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -10,10 +12,15 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.Navigation
+import androidx.palette.graphics.Palette
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 
 import com.demoapp.jatinsinghsaluja.dogs.R
 import com.demoapp.jatinsinghsaluja.dogs.databinding.FragmentDetailBinding
 import com.demoapp.jatinsinghsaluja.dogs.model.DogBreed
+import com.demoapp.jatinsinghsaluja.dogs.model.DogPalette
 import com.demoapp.jatinsinghsaluja.dogs.util.getProgressDrawable
 import com.demoapp.jatinsinghsaluja.dogs.util.loadImage
 import com.demoapp.jatinsinghsaluja.dogs.viewmodel.DetailViewModel
@@ -63,6 +70,31 @@ class DetailFragment : Fragment() {
             dogLiveData?.let {
 
                 dataBinding.dog = dogLiveData
+                it.imageUrl?.let {
+                    setBackgroundColor(it)
+                }
+            }
+
+        })
+
+    }
+
+    private fun setBackgroundColor(url:String){
+
+        Glide.with(this)
+            .asBitmap()
+            .load(url)
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onLoadCleared(placeholder: Drawable?) {}
+
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    Palette.from(resource).generate { palette ->
+                        val intColor = palette?.lightMutedSwatch?.rgb ?: 0
+                        val myPalette = DogPalette(intColor)
+
+                        // attaches myPalette to the layout
+                        dataBinding.palette = myPalette
+                    }
             }
 
         })
