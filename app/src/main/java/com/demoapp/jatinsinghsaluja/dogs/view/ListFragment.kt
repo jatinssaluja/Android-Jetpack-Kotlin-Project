@@ -53,7 +53,7 @@ class ListFragment : Fragment() {
             dogsList.visibility = View.GONE
             listError.visibility = View.GONE
             loadingSpinner.visibility = View.VISIBLE
-            viewModel.refresh()
+            viewModel.refreshBypassCache()
 
             // will only make little spinner at the top disappear, not the loading spinner
             refreshLayout.isRefreshing = false

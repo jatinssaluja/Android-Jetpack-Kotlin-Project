@@ -1,6 +1,7 @@
 package com.demoapp.jatinsinghsaluja.dogs.viewmodel
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.demoapp.jatinsinghsaluja.dogs.model.DogBreed
@@ -20,17 +21,41 @@ class ListViewModel(application: Application): BaseViewModel(application) {
     // allows to observe the observable of type Single returned by the remote API
     private val disposable = CompositeDisposable()
 
+    private var prefHelper = SharedPreferencesHelper(getApplication())
+
+    // 5 minutes in nano seconds
+    private var refreshTime = 5 * 60 * 1000 * 1000 * 1000L
+
     val dogs = MutableLiveData<List<DogBreed>>()
     val dogsLoadingError = MutableLiveData<Boolean>()
 
     // this live data will tell its subscribers that the system is loading
     val loading = MutableLiveData<Boolean>()
 
-    private var prefHelper = SharedPreferencesHelper(getApplication())
 
     fun refresh(){
 
+        val updateTime = prefHelper.getUpdateTime()
+        if(updateTime != null && updateTime!= 0L && System.nanoTime() - updateTime < refreshTime){
+            fetchFromDatabase()
+        } else {
+            fetchFromRemote()
+        }
+
+    }
+
+    fun refreshBypassCache(){
         fetchFromRemote()
+    }
+
+    private fun fetchFromDatabase(){
+
+        loading.value = true
+        launch {
+            val dogs = DogDatabase(getApplication()).dogDao().getAllDogs()
+            dogsFetched(dogs)
+            Toast.makeText(getApplication(), "Dogs Fetched from database",Toast.LENGTH_LONG).show()
+        }
 
     }
 
@@ -47,6 +72,7 @@ class ListViewModel(application: Application): BaseViewModel(application) {
                     override fun onSuccess(dogList: List<DogBreed>) {
 
                         storeDogsLocally(dogList)
+                        Toast.makeText(getApplication(), "Dogs Fetched from remote api",Toast.LENGTH_LONG).show()
 
                     }
 
