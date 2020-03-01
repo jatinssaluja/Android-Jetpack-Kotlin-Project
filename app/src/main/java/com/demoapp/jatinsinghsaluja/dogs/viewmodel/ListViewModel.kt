@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.demoapp.jatinsinghsaluja.dogs.model.DogBreed
 import com.demoapp.jatinsinghsaluja.dogs.model.DogDatabase
 import com.demoapp.jatinsinghsaluja.dogs.model.DogsApiService
+import com.demoapp.jatinsinghsaluja.dogs.util.NotificationsHelper
 import com.demoapp.jatinsinghsaluja.dogs.util.SharedPreferencesHelper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -73,6 +74,7 @@ class ListViewModel(application: Application): BaseViewModel(application) {
 
                         storeDogsLocally(dogList)
                         Toast.makeText(getApplication(), "Dogs Fetched from remote api",Toast.LENGTH_LONG).show()
+                        NotificationsHelper(getApplication()).createNotification()
 
                     }
 
