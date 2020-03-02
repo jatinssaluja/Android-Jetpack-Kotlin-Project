@@ -1,10 +1,14 @@
 package com.demoapp.jatinsinghsaluja.dogs.view
 
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.telephony.SmsManager
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
@@ -17,8 +21,10 @@ import com.bumptech.glide.request.transition.Transition
 
 import com.demoapp.jatinsinghsaluja.dogs.R
 import com.demoapp.jatinsinghsaluja.dogs.databinding.FragmentDetailBinding
+import com.demoapp.jatinsinghsaluja.dogs.databinding.SendSmsDialogBinding
 import com.demoapp.jatinsinghsaluja.dogs.model.DogBreed
 import com.demoapp.jatinsinghsaluja.dogs.model.DogPalette
+import com.demoapp.jatinsinghsaluja.dogs.model.SmsInfo
 import com.demoapp.jatinsinghsaluja.dogs.util.getProgressDrawable
 import com.demoapp.jatinsinghsaluja.dogs.util.loadImage
 import com.demoapp.jatinsinghsaluja.dogs.viewmodel.DetailViewModel
@@ -37,6 +43,7 @@ class DetailFragment : Fragment() {
     private lateinit var dataBinding: FragmentDetailBinding
     private var dogUuid = 0
     private var sendSMSStarted = false
+    private var currentDog: DogBreed? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -67,11 +74,12 @@ class DetailFragment : Fragment() {
 
     private fun observeViewModel() {
 
-        viewModel.dogLiveData.observe(this, Observer { dogLiveData:DogBreed ->
+        viewModel.dogLiveData.observe(this, Observer { dogLiveData ->
 
             dogLiveData?.let {
 
                 dataBinding.dog = dogLiveData
+                currentDog = dogLiveData
                 it.imageUrl?.let {
                     setBackgroundColor(it)
                 }
@@ -81,7 +89,7 @@ class DetailFragment : Fragment() {
 
     }
 
-    private fun setBackgroundColor(url:String){
+    private fun setBackgroundColor(url: String) {
 
         Glide.with(this)
             .asBitmap()
@@ -97,9 +105,9 @@ class DetailFragment : Fragment() {
                         // attaches myPalette to the layout
                         dataBinding.palette = myPalette
                     }
-            }
+                }
 
-        })
+            })
 
     }
 
@@ -123,9 +131,42 @@ class DetailFragment : Fragment() {
 
     fun onPermissionResult(permissionGranted: Boolean) {
 
+        if (sendSMSStarted && permissionGranted) {
 
+            context?.let {
+                val smsInfo =
+                    SmsInfo("", "${currentDog?.dogBreed} bred for ${currentDog?.bredFor}", currentDog?.imageUrl)
 
+                val dialogBinding = DataBindingUtil.inflate<SendSmsDialogBinding>(
+                    LayoutInflater.from(it),
+                    R.layout.send_sms_dialog,
+                    null,
+                    false
+                )
+
+                AlertDialog.Builder(it)
+                    .setView(dialogBinding.root)
+                    .setPositiveButton("Send SMS") { dialog, which ->
+                        if (!dialogBinding.smsDestination.text.isNullOrEmpty()) {
+                            smsInfo.to = dialogBinding.smsDestination.text.toString()
+                            sendSms(smsInfo)
+                        }
+                    }
+                    .setNegativeButton("Cancel") { dialog, which -> }
+                    .show()
+
+                dialogBinding.smsInfo = smsInfo
+            }
         }
+
+    }
+
+    private fun sendSms(smsInfo: SmsInfo) {
+        val intent = Intent(context, MainActivity::class.java)
+        val pi = PendingIntent.getActivity(context, 0, intent, 0)
+        val sms = SmsManager.getDefault()
+        sms.sendTextMessage(smsInfo.to, null, smsInfo.text, pi, null)
+    }
 
 
 }
