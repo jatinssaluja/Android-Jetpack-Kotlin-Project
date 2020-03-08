@@ -13,14 +13,15 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableSingleObserver
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class ListViewModel(application: Application): BaseViewModel(application) {
 
-    private val dogsApiService = DogsApiService()
+    private val dogsApiService = DogsApiService.getDogsApiService()
 
-    // allows to observe the observable of type Single returned by the remote API
-    private val disposable = CompositeDisposable()
+    var job: Job? = null
+    val coroutineExceptionHandler = CoroutineExceptionHandler{
+            coroutineContext, throwable -> onError("Exception: ${throwable.localizedMessage}") }
 
     private var prefHelper = SharedPreferencesHelper(getApplication())
 
@@ -76,31 +77,24 @@ class ListViewModel(application: Application): BaseViewModel(application) {
     private fun fetchFromRemote(){
 
         loading.value = true
-        disposable.add(
-            dogsApiService.getDogs()
-                    //access remote api on background thread
-                .subscribeOn(Schedulers.newThread())
-                    //process the response on main thread
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(object:DisposableSingleObserver<List<DogBreed>>(){
-                    override fun onSuccess(dogList: List<DogBreed>) {
 
-                        storeDogsLocally(dogList)
-                        Toast.makeText(getApplication(), "Dogs Fetched from remote api",Toast.LENGTH_LONG).show()
-                        NotificationsHelper(getApplication()).createNotification()
+        job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            val response = dogsApiService.getDogs()
 
-                    }
+            withContext(Dispatchers.Main){
 
-                    override fun onError(e: Throwable) {
+                if(response.isSuccessful){
 
-                        dogsLoadingError.value = true
-                        loading.value = false
-                        e.printStackTrace()
+                    response.body()?.let{ storeDogsLocally(it)}
+                    Toast.makeText(getApplication(), "Dogs Fetched from remote api",Toast.LENGTH_LONG).show()
+                    NotificationsHelper(getApplication()).createNotification()
 
-                    }
+                }else{
+                    onError("Error: ${response.message()}")
+                }
+            }
+        }
 
-                })
-        )
 
     }
 
@@ -129,8 +123,15 @@ class ListViewModel(application: Application): BaseViewModel(application) {
 
     }
 
+    private fun onError(message: String) {
+
+        dogsLoadingError.value = true
+        loading.value = false
+
+    }
+
     override fun onCleared() {
         super.onCleared()
-        disposable.clear()
+        job?.cancel()
     }
 }
